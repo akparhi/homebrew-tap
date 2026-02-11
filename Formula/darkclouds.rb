@@ -1,16 +1,16 @@
 class Darkclouds < Formula
   desc "Automated bug-fixing system powered by Claude"
   homepage "https://github.com/akparhi/darkclouds"
-  version "0.3.6"
+  version "0.4.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.3.6/darkclouds-darwin-arm64.tar.gz"
-      sha256 "2b5dd7bcac0aa4f2f06c6d0513337b7add88b1786969d9a9439f3ea0d43cf089"
+      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.0/darkclouds-darwin-arm64.tar.gz"
+      sha256 "655dc881aef95e2d7aac228fc709e2e822518e670c67d4c6f04aacd850aeb226"
     else
-      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.3.6/darkclouds-darwin-x64.tar.gz"
-      sha256 "95af50cade82747d14f22e295febcd14a61d077a73523f9bb570dbc8a2873bf0"
+      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.0/darkclouds-darwin-x64.tar.gz"
+      sha256 "8bdf90c5acd4de598e1bd479efc253326a64957513bf72bc3c7a742e13906628"
     end
   end
 
