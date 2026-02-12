@@ -483,7 +483,7 @@ export function FerrixDocs() {
                     "Triage,Todo (ready),Todo",
                     "Matching states",
                   ],
-                  ["claude_command", "/spec-dev", "Claude skill to invoke"],
+                  ["claude_command", "/ferrix", "Claude skill to invoke"],
                   ["claude_model", "opus", "Claude model"],
                   ["claude_timeout_minutes", "10", "Max fix time (min)"],
                   ["claude_effort_level", "low", "Reasoning effort"],
@@ -551,7 +551,10 @@ export function FerrixDocs() {
             </li>
             <li>
               <strong className="text-foreground">Match</strong> — map ticket to
-              local repo
+              local repo via Linear labels (e.g.{" "}
+              <InlineCode>my-repo</InlineCode> or{" "}
+              <InlineCode>my-repo:staging</InlineCode> to also set the base
+              branch)
             </li>
             <li>
               <strong className="text-foreground">Process</strong> — branch +
@@ -570,6 +573,19 @@ export function FerrixDocs() {
               notification + stats
             </li>
           </ol>
+
+          <h3 className="text-sm font-medium mb-2">
+            Label-based repo matching
+          </h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Ferrix matches Linear tickets to repos using labels. Add a label
+            matching your repo name (e.g. <InlineCode>athena-web</InlineCode>)
+            to route tickets. To also override the base branch, use the format{" "}
+            <InlineCode>repo-name:branch</InlineCode> (e.g.{" "}
+            <InlineCode>athena-web:staging</InlineCode> creates the PR against{" "}
+            <InlineCode>staging</InlineCode> instead of the repo default).
+          </p>
+          <CodeBlock>{`# Label examples\nathena-web          → matches repo "athena-web", uses default base branch\nathena-web:staging  → matches repo "athena-web", PR targets "staging"\nathena-web:develop  → matches repo "athena-web", PR targets "develop"`}</CodeBlock>
 
           {/* IPC */}
           <SectionHeading id="ipc">IPC Protocol</SectionHeading>
