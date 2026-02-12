@@ -11,19 +11,19 @@ export function Header({
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="border-b border-border bg-surface-0/80 backdrop-blur-md sticky top-0 z-40">
+    <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
             to="/"
-            className="font-mono text-sm text-text-secondary hover:text-text-primary transition-colors"
+            className="font-mono text-sm text-muted-foreground hover:text-foreground transition-colors no-underline"
           >
-            akparhi<span className="text-accent">/</span>tap
+            akparhi<span className="text-foreground">/</span>tap
           </Link>
           {tool && (
             <>
-              <span className="text-text-tertiary">/</span>
-              <span className="font-mono text-sm font-medium text-text-primary">
+              <span className="text-muted-foreground/50">/</span>
+              <span className="font-mono text-sm font-medium text-foreground">
                 {tool}
               </span>
             </>
@@ -34,7 +34,7 @@ export function Header({
           {onMenuToggle && (
             <button
               onClick={onMenuToggle}
-              className="lg:hidden text-text-tertiary hover:text-text-secondary transition-colors"
+              className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Toggle sidebar"
             >
               <svg
@@ -52,7 +52,7 @@ export function Header({
             href="https://github.com/akparhi/homebrew-tap"
             target="_blank"
             rel="noreferrer"
-            className="text-text-tertiary hover:text-text-secondary transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors no-underline"
           >
             <svg
               className="w-[18px] h-[18px]"
@@ -64,7 +64,7 @@ export function Header({
           </a>
           <button
             onClick={toggle}
-            className="text-text-tertiary hover:text-text-secondary transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? (

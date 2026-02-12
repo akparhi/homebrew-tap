@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
 import { Header } from "../components/header.tsx";
 import { CodeBlock } from "../components/code-block.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx";
+import { Separator } from "@/components/ui/separator.tsx";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table.tsx";
+import { cn } from "@/lib/utils.ts";
 
 const SIDEBAR_SECTIONS = [
   {
@@ -36,33 +53,32 @@ const SIDEBAR_SECTIONS = [
   { title: "Files & Data", links: [{ id: "files", label: "File Locations" }] },
 ];
 
-function Sidebar({
-  activeId,
-  className,
-}: {
-  activeId: string;
-  className?: string;
-}) {
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
+function Sidebar({ activeId }: { activeId: string }) {
   return (
-    <nav className={`space-y-5 ${className ?? ""}`}>
+    <nav className="space-y-5">
       {SIDEBAR_SECTIONS.map((section) => (
         <div key={section.title}>
           <h4 className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5 px-3">
             {section.title}
           </h4>
-          <ul className="space-y-px">
+          <ul className="space-y-0.5">
             {section.links.map((link) => (
               <li key={link.id}>
-                <a
-                  href={`#${link.id}`}
-                  className={`sidebar-link block text-[13px] py-1.5 px-3 rounded-md border-l-0 transition-colors ${
+                <button
+                  onClick={() => scrollTo(link.id)}
+                  className={cn(
+                    "block w-full text-left text-[13px] py-1.5 px-3 rounded-md transition-colors",
                     activeId === link.id
-                      ? "text-foreground bg-secondary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
+                      ? "bg-sidebar-active text-sidebar-active-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  )}
                 >
                   {link.label}
-                </a>
+                </button>
               </li>
             ))}
           </ul>
@@ -82,54 +98,10 @@ function SectionHeading({
   return (
     <h2
       id={id}
-      className="text-xl font-bold tracking-tight mb-4 mt-14 first:mt-0 scroll-mt-20 text-foreground"
+      className="text-xl font-bold tracking-tight mb-4 mt-14 first:mt-0 scroll-mt-20"
     >
       {children}
     </h2>
-  );
-}
-
-function Table({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: React.ReactNode[][];
-}) {
-  return (
-    <div className="border border-border rounded-lg overflow-hidden overflow-x-auto bg-card">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border">
-            {headers.map((h, i) => (
-              <th
-                key={i}
-                className={`text-left px-4 py-2.5 text-muted-foreground whitespace-nowrap text-xs ${i === 0 ? "font-mono" : ""} font-medium`}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="text-muted-foreground">
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={i < rows.length - 1 ? "border-b border-border" : ""}
-            >
-              {row.map((cell, j) => (
-                <td
-                  key={j}
-                  className={`px-4 py-2 ${j === 0 ? "font-mono text-xs text-foreground whitespace-nowrap" : "text-[13px]"}`}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -141,7 +113,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Code({ children }: { children: React.ReactNode }) {
+function InlineCode({ children }: { children: React.ReactNode }) {
   return (
     <code className="font-mono text-[13px] bg-muted px-1.5 py-0.5 rounded text-foreground">
       {children}
@@ -157,15 +129,12 @@ function PipelineStep({
   highlight?: boolean;
 }) {
   return (
-    <span
-      className={`px-2 py-1 rounded font-mono text-xs border ${
-        highlight
-          ? "bg-secondary border-border text-foreground"
-          : "bg-muted border-border text-muted-foreground"
-      }`}
+    <Badge
+      variant={highlight ? "default" : "secondary"}
+      className={cn("font-mono text-xs", highlight && "shadow-sm")}
     >
       {label}
-    </span>
+    </Badge>
   );
 }
 
@@ -196,7 +165,7 @@ export function FerrixDocs() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header tool="Ferrix" onMenuToggle={toggleSidebar} />
 
       <div className="max-w-7xl mx-auto flex">
@@ -223,10 +192,13 @@ export function FerrixDocs() {
           {/* Hero */}
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-md bg-secondary border border-border flex items-center justify-center text-foreground font-mono font-medium text-xs">
+              <div className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-mono font-medium text-xs">
                 fx
               </div>
               <h1 className="text-2xl font-bold tracking-tight">Ferrix</h1>
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                CLI
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
               An automated bug-fixing daemon that polls Linear for assigned
@@ -255,7 +227,6 @@ export function FerrixDocs() {
               <strong className="text-foreground">Linear API Key</strong> — from{" "}
               <a
                 href="https://linear.app/settings/api"
-                className="text-foreground hover:underline"
                 target="_blank"
                 rel="noreferrer"
               >
@@ -265,8 +236,8 @@ export function FerrixDocs() {
             </li>
             <li>
               <strong className="text-foreground">Repository Discovery</strong>{" "}
-              — auto-scans <Code>~</Code> and <Code>~/Projects</Code> for git
-              repos
+              — auto-scans <InlineCode>~</InlineCode> and{" "}
+              <InlineCode>~/Projects</InlineCode> for git repos
             </li>
             <li>
               <strong className="text-foreground">Repository Selection</strong>{" "}
@@ -282,77 +253,102 @@ export function FerrixDocs() {
             </li>
             <li>
               <strong className="text-foreground">GitHub Auth</strong> — checks{" "}
-              <Code>gh</Code> CLI status
+              <InlineCode>gh</InlineCode> CLI status
             </li>
           </ol>
 
           {/* Requirements */}
           <SectionHeading id="requirements">Requirements</SectionHeading>
           <div className="grid sm:grid-cols-2 gap-3 mb-6">
-            <div className="border border-border rounded-lg p-4 bg-card">
-              <h4 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                System
-              </h4>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>macOS (Apple Silicon or Intel)</li>
-                <li>Homebrew</li>
-              </ul>
-            </div>
-            <div className="border border-border rounded-lg p-4 bg-card">
-              <h4 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                Accounts
-              </h4>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>
-                  <a
-                    href="https://console.anthropic.com/"
-                    className="text-foreground hover:underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Claude
-                  </a>{" "}
-                  (via <Code>claude</Code> CLI)
-                </li>
-                <li>
-                  <a
-                    href="https://linear.app/settings/api"
-                    className="text-foreground hover:underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Linear API key
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://cli.github.com"
-                    className="text-foreground hover:underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    GitHub CLI
-                  </a>{" "}
-                  (<Code>gh auth login</Code>)
-                </li>
-              </ul>
-            </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  System
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>macOS (Apple Silicon or Intel)</li>
+                  <li>Homebrew</li>
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Accounts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>
+                    <a
+                      href="https://console.anthropic.com/"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Claude
+                    </a>{" "}
+                    <span className="text-muted-foreground no-underline">
+                      (via <InlineCode>claude</InlineCode> CLI)
+                    </span>
+                  </li>
+                  <li>
+                    <a
+                      href="https://linear.app/settings/api"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Linear API key
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://cli.github.com"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      GitHub CLI
+                    </a>{" "}
+                    <span className="text-muted-foreground">
+                      (<InlineCode>gh auth login</InlineCode>)
+                    </span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
 
           {/* CLI Commands */}
           <SectionHeading id="cli-commands">Commands</SectionHeading>
-          <div className="mb-4">
-            <Table
-              headers={["Command", "Description"]}
-              rows={[
-                ["ferrix", "Launch TUI (auto-starts daemon if not running)"],
-                ["ferrix start", "Start daemon in background"],
-                ["ferrix stop", "Stop the daemon"],
-                ["ferrix status", "Show daemon status, uptime, last poll"],
-                ["ferrix logs", "Tail daemon logs (last 20 + follow)"],
-              ]}
-            />
-          </div>
+          <Card className="mb-4 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs">Command</TableHead>
+                  <TableHead className="text-xs">Description</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  ["ferrix", "Launch TUI (auto-starts daemon if not running)"],
+                  ["ferrix start", "Start daemon in background"],
+                  ["ferrix stop", "Stop the daemon"],
+                  ["ferrix status", "Show daemon status, uptime, last poll"],
+                  ["ferrix logs", "Tail daemon logs (last 20 + follow)"],
+                ].map(([cmd, desc]) => (
+                  <TableRow key={cmd}>
+                    <TableCell className="font-mono text-xs font-medium">
+                      {cmd}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {desc}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
           <CodeBlock>{`$ ferrix status\nDaemon is running (PID 12345)\n  Uptime: 2h 14m\n  Paused: no\n  Connected clients: 1\n  Last poll: 28s ago`}</CodeBlock>
 
           {/* TUI Views */}
@@ -361,7 +357,6 @@ export function FerrixDocs() {
             Terminal UI built with{" "}
             <a
               href="https://github.com/vadimdemedes/ink"
-              className="text-foreground hover:underline"
               target="_blank"
               rel="noreferrer"
             >
@@ -382,55 +377,67 @@ export function FerrixDocs() {
               { n: "5", name: "Repos", desc: "Manage monitored repos" },
               { n: "6", name: "Settings", desc: "Edit config, reset wizard" },
             ].map((v) => (
-              <div
-                key={v.n}
-                className="flex items-center gap-3 border border-border rounded-lg px-3.5 py-2.5 bg-card"
-              >
-                <span className="font-mono text-[11px] text-foreground bg-secondary w-5 h-5 rounded flex items-center justify-center shrink-0">
+              <Card key={v.n} className="flex items-center gap-3 px-3.5 py-2.5">
+                <Badge
+                  variant="default"
+                  className="font-mono text-[11px] w-5 h-5 p-0 justify-center shrink-0"
+                >
                   {v.n}
-                </span>
+                </Badge>
                 <div className="min-w-0">
-                  <span className="text-sm font-medium text-foreground">
-                    {v.name}
-                  </span>
+                  <span className="text-sm font-medium">{v.name}</span>
                   <span className="text-xs text-muted-foreground ml-2">
                     {v.desc}
                   </span>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
 
           {/* Keyboard */}
           <SectionHeading id="keyboard">Keyboard Shortcuts</SectionHeading>
-          <div className="mb-6">
-            <Table
-              headers={["Key", "Action"]}
-              rows={[
-                [
-                  <>
-                    <Kbd>1</Kbd>–<Kbd>6</Kbd>
-                  </>,
-                  "Switch tab by number",
-                ],
-                [
-                  <>
-                    <Kbd>&larr;</Kbd> <Kbd>&rarr;</Kbd>
-                  </>,
-                  "Navigate tabs",
-                ],
-                [
-                  <>
-                    <Kbd>&uarr;</Kbd> <Kbd>&darr;</Kbd>
-                  </>,
-                  "Scroll lists",
-                ],
-                [<Kbd>Space</Kbd>, "Toggle selection"],
-                [<Kbd>Enter</Kbd>, "Confirm / submit"],
-                [<Kbd>Esc</Kbd>, "Close / cancel"],
-              ]}
-            />
-          </div>
+          <Card className="mb-6 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Key</TableHead>
+                  <TableHead className="text-xs">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  [
+                    <>
+                      <Kbd>1</Kbd>–<Kbd>6</Kbd>
+                    </>,
+                    "Switch tab by number",
+                  ],
+                  [
+                    <>
+                      <Kbd>&larr;</Kbd> <Kbd>&rarr;</Kbd>
+                    </>,
+                    "Navigate tabs",
+                  ],
+                  [
+                    <>
+                      <Kbd>&uarr;</Kbd> <Kbd>&darr;</Kbd>
+                    </>,
+                    "Scroll lists",
+                  ],
+                  [<Kbd>Space</Kbd>, "Toggle selection"],
+                  [<Kbd>Enter</Kbd>, "Confirm / submit"],
+                  [<Kbd>Esc</Kbd>, "Close / cancel"],
+                ].map(([key, action], i) => (
+                  <TableRow key={i}>
+                    <TableCell>{key}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {action}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
 
           {/* Configuration */}
           <SectionHeading id="config-settings">Configuration</SectionHeading>
@@ -438,28 +445,50 @@ export function FerrixDocs() {
             All settings in SQLite, editable via TUI Settings. Changes apply
             immediately.
           </p>
-          <div className="mb-6">
-            <Table
-              headers={["Setting", "Default", "Description"]}
-              rows={[
-                ["polling_interval", "30000", "Poll Linear interval (ms)"],
-                ["min_ticket_age", "60000", "Min age before processing (ms)"],
-                ["max_ticket_age", "31536000000", "Max age (~365 days)"],
-                ["min_description_length", "1", "Min description chars"],
-                ["linear_scan_mode", "me", "Scan mode"],
-                [
-                  "linear_states_filter",
-                  "Triage,Todo (ready),Todo",
-                  "Matching states",
-                ],
-                ["claude_command", "/spec-dev", "Claude skill to invoke"],
-                ["claude_model", "opus", "Claude model"],
-                ["claude_timeout_minutes", "10", "Max fix time (min)"],
-                ["claude_effort_level", "low", "Reasoning effort"],
-                ["notification_sound", "default", "macOS sound"],
-              ]}
-            />
-          </div>
+          <Card className="mb-6 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs">Setting</TableHead>
+                  <TableHead className="text-xs">Default</TableHead>
+                  <TableHead className="text-xs">Description</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  ["polling_interval", "30000", "Poll Linear interval (ms)"],
+                  ["min_ticket_age", "60000", "Min age before processing (ms)"],
+                  ["max_ticket_age", "31536000000", "Max age (~365 days)"],
+                  ["min_description_length", "1", "Min description chars"],
+                  ["linear_scan_mode", "me", "Scan mode"],
+                  [
+                    "linear_states_filter",
+                    "Triage,Todo (ready),Todo",
+                    "Matching states",
+                  ],
+                  ["claude_command", "/spec-dev", "Claude skill to invoke"],
+                  ["claude_model", "opus", "Claude model"],
+                  ["claude_timeout_minutes", "10", "Max fix time (min)"],
+                  ["claude_effort_level", "low", "Reasoning effort"],
+                  ["notification_sound", "default", "macOS sound"],
+                ].map(([setting, def, desc]) => (
+                  <TableRow key={setting}>
+                    <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                      {setting}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      {def}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {desc}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+
+          <Separator className="my-10" />
 
           {/* Pipeline */}
           <SectionHeading id="pipeline">Pipeline</SectionHeading>
@@ -497,9 +526,7 @@ export function FerrixDocs() {
             <span className="text-muted-foreground">|</span>
             <span className="text-muted-foreground">skipped</span>
           </div>
-          <h3 className="text-sm font-medium mb-2 text-foreground">
-            How it works
-          </h3>
+          <h3 className="text-sm font-medium mb-2">How it works</h3>
           <ol className="space-y-1.5 mb-6 text-sm text-muted-foreground list-decimal list-inside">
             <li>
               <strong className="text-foreground">Poll</strong> — query Linear
@@ -530,71 +557,96 @@ export function FerrixDocs() {
           {/* IPC */}
           <SectionHeading id="ipc">IPC Protocol</SectionHeading>
           <p className="text-sm text-muted-foreground mb-4">
-            Unix domain socket (<Code>~/.ferrix/daemon.sock</Code>), JSON Lines
-            protocol.
+            Unix domain socket (<InlineCode>~/.ferrix/daemon.sock</InlineCode>),
+            JSON Lines protocol.
           </p>
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <div>
-              <h4 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                Commands
-              </h4>
-              <ul className="space-y-0.5 text-[13px] font-mono text-muted-foreground">
-                {[
-                  "start",
-                  "stop",
-                  "pause",
-                  "resume",
-                  "reload-config",
-                  "trigger-fix",
-                  "retry-ticket",
-                  "select-repo",
-                  "clear-queue",
-                ].map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                Events
-              </h4>
-              <ul className="space-y-0.5 text-[13px] font-mono text-muted-foreground">
-                {[
-                  "status-changed",
-                  "ticket-updated",
-                  "repo-selection-required",
-                  "log-entry",
-                  "claude-output",
-                  "config-reloaded",
-                  "shutdown",
-                ].map((e) => (
-                  <li key={e}>{e}</li>
-                ))}
-              </ul>
-            </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Commands
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-0.5 text-[13px] font-mono text-muted-foreground">
+                  {[
+                    "start",
+                    "stop",
+                    "pause",
+                    "resume",
+                    "reload-config",
+                    "trigger-fix",
+                    "retry-ticket",
+                    "select-repo",
+                    "clear-queue",
+                  ].map((c) => (
+                    <li key={c}>{c}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Events
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-0.5 text-[13px] font-mono text-muted-foreground">
+                  {[
+                    "status-changed",
+                    "ticket-updated",
+                    "repo-selection-required",
+                    "log-entry",
+                    "claude-output",
+                    "config-reloaded",
+                    "shutdown",
+                  ].map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Files */}
           <SectionHeading id="files">File Locations</SectionHeading>
           <p className="text-sm text-muted-foreground mb-4">
-            All data under <Code>~/.ferrix/</Code>:
+            All data under <InlineCode>~/.ferrix/</InlineCode>:
           </p>
-          <div className="mb-4">
-            <Table
-              headers={["Path", "Description"]}
-              rows={[
-                [
-                  "~/.ferrix/data.db",
-                  "SQLite database (config, repos, tickets, stats)",
-                ],
-                ["~/.ferrix/daemon.sock", "IPC socket"],
-                ["~/.ferrix/daemon.pid", "Daemon PID file"],
-                ["~/.ferrix/logs/daemon.log", "Rotating log (Pino JSON)"],
-              ]}
-            />
-          </div>
+          <Card className="mb-4 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs">Path</TableHead>
+                  <TableHead className="text-xs">Description</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[
+                  [
+                    "~/.ferrix/data.db",
+                    "SQLite database (config, repos, tickets, stats)",
+                  ],
+                  ["~/.ferrix/daemon.sock", "IPC socket"],
+                  ["~/.ferrix/daemon.pid", "Daemon PID file"],
+                  ["~/.ferrix/logs/daemon.log", "Rotating log (Pino JSON)"],
+                ].map(([path, desc]) => (
+                  <TableRow key={path}>
+                    <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                      {path}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {desc}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
           <p className="text-sm text-muted-foreground">
-            To reset, delete <Code>~/.ferrix/data.db</Code> and restart.
+            To reset, delete <InlineCode>~/.ferrix/data.db</InlineCode> and
+            restart.
           </p>
 
           <div className="h-20" />
@@ -608,7 +660,7 @@ export function FerrixDocs() {
           </span>
           <a
             href="https://github.com/akparhi/homebrew-tap"
-            className="font-mono text-[11px] text-muted-foreground hover:text-muted-foreground transition-colors"
+            className="font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors no-underline"
           >
             GitHub
           </a>
