@@ -3,6 +3,7 @@ import { Header } from "../components/header.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
+import { FERRIX_VERSION } from "@/version.ts";
 
 export function Landing() {
   return (
@@ -52,6 +53,9 @@ export function Landing() {
                       className="font-mono text-[10px]"
                     >
                       CLI
+                    </Badge>
+                    <Badge variant="outline" className="font-mono text-[10px]">
+                      v{FERRIX_VERSION}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
