@@ -12,7 +12,7 @@ export function Landing() {
       <main className="max-w-3xl mx-auto px-6">
         <section className="pt-24 pb-20">
           <Badge variant="outline" className="mb-8 font-mono text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground mr-2" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
             homebrew tap
           </Badge>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
@@ -27,7 +27,7 @@ export function Landing() {
             <span className="text-muted-foreground select-none">$</span>
             <span>
               brew install akparhi/tap/
-              <span className="text-foreground font-medium">&lt;tool&gt;</span>
+              <span className="text-primary font-medium">&lt;tool&gt;</span>
             </span>
           </div>
         </section>
