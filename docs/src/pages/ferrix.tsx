@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table.tsx";
 import { cn } from "@/lib/utils.ts";
+import { FERRIX_VERSION } from "@/version.ts";
 
 const SIDEBAR_SECTIONS = [
   {
@@ -198,6 +199,9 @@ export function FerrixDocs() {
               <h1 className="text-2xl font-bold tracking-tight">Ferrix</h1>
               <Badge variant="secondary" className="font-mono text-[10px]">
                 CLI
+              </Badge>
+              <Badge variant="outline" className="font-mono text-[10px]">
+                v{FERRIX_VERSION}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
