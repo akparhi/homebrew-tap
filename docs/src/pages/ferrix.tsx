@@ -142,7 +142,9 @@ function PipelineStep({
 
 export function FerrixDocs() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeId, setActiveId] = useState("installation");
+  const [activeId, setActiveId] = useState(
+    () => window.location.hash.slice(1) || "installation",
+  );
 
   const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), []);
 
