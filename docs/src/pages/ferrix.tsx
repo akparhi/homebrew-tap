@@ -56,6 +56,7 @@ const SIDEBAR_SECTIONS = [
 
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  history.replaceState(null, "", `#${id}`);
 }
 
 function Sidebar({ activeId }: { activeId: string }) {
@@ -144,6 +145,16 @@ export function FerrixDocs() {
   const [activeId, setActiveId] = useState("installation");
 
   const toggleSidebar = useCallback(() => setSidebarOpen((o) => !o), []);
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      requestAnimationFrame(() => {
+        document.getElementById(hash)?.scrollIntoView();
+        setActiveId(hash);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const allIds = SIDEBAR_SECTIONS.flatMap((s) => s.links.map((l) => l.id));
