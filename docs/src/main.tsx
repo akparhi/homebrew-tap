@@ -6,7 +6,8 @@ import { FerrixDocs } from "./pages/ferrix.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root")!;
+createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
       <BrowserRouter basename="/homebrew-tap">
@@ -18,3 +19,4 @@ createRoot(document.getElementById("root")!).render(
     </ThemeProvider>
   </StrictMode>,
 );
+requestAnimationFrame(() => (root.style.opacity = "1"));
