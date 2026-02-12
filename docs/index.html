@@ -16,10 +16,11 @@
 	<body>
 		<script>
 			(function () {
-				var t = localStorage.getItem("theme");
-				if (t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches)) {
-					document.documentElement.classList.add("dark");
-				}
+				var d = localStorage.getItem("theme") === "dark" ||
+					(!localStorage.getItem("theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+				if (d) document.documentElement.classList.add("dark");
+				document.documentElement.style.background = d ? "oklch(0.1 0 0)" : "oklch(0.985 0 0)";
+				document.documentElement.style.colorScheme = d ? "dark" : "light";
 			})();
 		</script>
 		<div id="root"></div>
