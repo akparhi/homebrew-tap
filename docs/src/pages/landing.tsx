@@ -3,81 +3,81 @@ import { Header } from "../components/header.tsx";
 
 export function Landing() {
   return (
-    <div className="bg-ink-50 text-ink-900 dark:bg-ink-950 dark:text-ink-100 font-body min-h-screen">
-      <div className="grain dark:opacity-[0.04]" />
+    <div className="min-h-screen">
       <Header />
 
-      <main className="max-w-5xl mx-auto px-6">
-        <section className="pt-20 pb-16">
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl leading-[0.95] tracking-tight">
-            Homebrew
+      <main className="max-w-3xl mx-auto px-6">
+        <section className="pt-24 pb-20">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border text-xs font-mono text-text-secondary mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            homebrew tap
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
+            Developer tools,
             <br />
-            <span className="italic text-accent">tools</span>
+            <span className="text-text-secondary">one brew away.</span>
           </h1>
-          <p className="mt-6 text-lg text-ink-500 dark:text-ink-400 max-w-lg leading-relaxed">
-            A collection of CLI tools distributed via Homebrew. Install any tool
-            with a single command.
+          <p className="mt-5 text-base text-text-secondary max-w-md leading-relaxed">
+            CLI tools distributed via Homebrew. Install, upgrade, and go.
           </p>
-          <div className="mt-8 font-mono text-sm bg-ink-900 dark:bg-ink-800 text-ink-100 rounded-lg px-5 py-3.5 inline-flex items-center gap-3 shadow-lg">
-            <span className="text-ink-500 select-none">$</span>
+          <div className="mt-8 font-mono text-sm bg-surface-1 border border-border text-text-primary rounded-lg px-4 py-3 inline-flex items-center gap-3">
+            <span className="text-text-tertiary select-none">$</span>
             <span>
               brew install akparhi/tap/
-              <span className="text-orange-400">&lt;tool&gt;</span>
+              <span className="text-accent">&lt;tool&gt;</span>
             </span>
           </div>
         </section>
 
-        <div className="border-t border-ink-200 dark:border-ink-800" />
+        <div className="border-t border-border" />
 
-        <section className="py-16">
-          <h2 className="font-mono text-xs uppercase tracking-widest text-ink-400 mb-8">
-            Available Tools
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2">
+        <section className="py-12">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-text-tertiary mb-6">
+            Tools
+          </p>
+          <div className="grid gap-3">
             <Link
               to="/ferrix"
-              className="tool-card group block border border-ink-200 dark:border-ink-800 rounded-xl p-6 hover:border-accent/40 dark:hover:border-accent/40 hover:shadow-md transition-all bg-white dark:bg-ink-900 no-underline"
+              className="tool-card group flex items-center gap-4 border border-border rounded-lg px-5 py-4 bg-surface-1 no-underline"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-mono font-medium text-sm shadow-sm">
-                  Fx
+              <div className="w-9 h-9 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-mono font-medium text-xs shrink-0">
+                fx
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-sm text-text-primary">
+                    Ferrix
+                  </h3>
+                  <span className="font-mono text-[10px] text-text-tertiary px-1.5 py-0.5 rounded bg-surface-3">
+                    CLI
+                  </span>
                 </div>
-                <span className="font-mono text-xs text-ink-400 group-hover:text-accent transition-colors">
-                  &rarr;
-                </span>
+                <p className="text-xs text-text-secondary mt-0.5 truncate">
+                  Automated bug-fixing daemon — Linear + Claude + GitHub
+                </p>
               </div>
-              <h3 className="font-display text-2xl mb-1.5 text-ink-900 dark:text-ink-100">
-                Ferrix
-              </h3>
-              <p className="text-sm text-ink-500 dark:text-ink-400 leading-relaxed">
-                Automated bug-fixing daemon. Polls Linear for tickets, generates
-                fixes with Claude, creates PRs on GitHub.
-              </p>
-              <div className="mt-4 font-mono text-xs text-ink-400">
-                <code>brew install akparhi/tap/ferrix</code>
-              </div>
+              <svg
+                className="w-4 h-4 text-text-tertiary group-hover:text-accent transition-colors shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
             </Link>
-
-            <div className="border border-dashed border-ink-200 dark:border-ink-800 rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[180px]">
-              <span className="text-ink-300 dark:text-ink-600 text-2xl mb-2">
-                +
-              </span>
-              <p className="text-sm text-ink-400 dark:text-ink-600">
-                More tools coming soon
-              </p>
-            </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-ink-200 dark:border-ink-800 mt-8">
-        <div className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between">
-          <span className="font-mono text-xs text-ink-400">
+      <footer className="border-t border-border mt-12">
+        <div className="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between">
+          <span className="font-mono text-[11px] text-text-tertiary">
             akparhi/homebrew-tap
           </span>
           <a
             href="https://github.com/akparhi/homebrew-tap"
-            className="font-mono text-xs text-ink-400 hover:text-accent transition-colors"
+            className="font-mono text-[11px] text-text-tertiary hover:text-text-secondary transition-colors"
           >
             GitHub
           </a>

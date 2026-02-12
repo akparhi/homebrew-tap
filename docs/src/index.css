@@ -1,25 +1,45 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-body: "DM Sans", system-ui, sans-serif;
-  --font-mono: "DM Mono", monospace;
+  --font-sans: "Satoshi", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
-  --color-ink-50: #fafaf9;
-  --color-ink-100: #f5f5f4;
-  --color-ink-200: #e7e5e4;
-  --color-ink-300: #d6d3d1;
-  --color-ink-400: #a8a29e;
-  --color-ink-500: #78716c;
-  --color-ink-600: #57534e;
-  --color-ink-700: #44403c;
-  --color-ink-800: #292524;
-  --color-ink-900: #1c1917;
-  --color-ink-950: #0c0a09;
+  --color-surface-0: var(--s0);
+  --color-surface-1: var(--s1);
+  --color-surface-2: var(--s2);
+  --color-surface-3: var(--s3);
+  --color-border: var(--bd);
+  --color-border-subtle: var(--bd-s);
+  --color-text-primary: var(--tp);
+  --color-text-secondary: var(--ts);
+  --color-text-tertiary: var(--tt);
+  --color-accent: var(--ac);
+}
 
-  --color-accent: #c2410c;
-  --color-accent-light: #ea580c;
-  --color-accent-dark: #9a3412;
+:root {
+  --s0: #ffffff;
+  --s1: #f9fafb;
+  --s2: #f3f4f6;
+  --s3: #e5e7eb;
+  --bd: #e5e7eb;
+  --bd-s: #f3f4f6;
+  --tp: #09090b;
+  --ts: #6b7280;
+  --tt: #9ca3af;
+  --ac: #10b981;
+}
+
+.dark {
+  --s0: #09090b;
+  --s1: #111113;
+  --s2: #18181b;
+  --s3: #27272a;
+  --bd: #27272a;
+  --bd-s: #1e1e21;
+  --tp: #fafafa;
+  --ts: #a1a1aa;
+  --tt: #52525b;
+  --ac: #10b981;
 }
 
 @layer base {
@@ -29,26 +49,17 @@
   }
   body {
     -webkit-font-smoothing: antialiased;
+    background: var(--s0);
+    color: var(--tp);
+    font-family: var(--font-sans);
   }
-}
-
-.grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.03;
-  z-index: 50;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 }
 
 .sidebar-link {
   transition:
     color 0.15s,
-    border-color 0.15s;
-}
-.sidebar-link.active {
-  color: var(--color-accent);
-  border-left-color: var(--color-accent);
+    border-color 0.15s,
+    background-color 0.15s;
 }
 
 .code-block:hover .copy-btn {
@@ -61,9 +72,10 @@
 
 .tool-card {
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 .tool-card:hover {
-  transform: translateY(-2px);
+  border-color: var(--ac);
+  background-color: var(--s2);
 }
