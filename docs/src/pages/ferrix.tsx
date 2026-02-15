@@ -17,8 +17,112 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table.tsx";
+import { Mermaid } from "@/components/mermaid.tsx";
 import { cn } from "@/lib/utils.ts";
 import { FERRIX_VERSION } from "@/version.ts";
+
+const DAEMON_DIAGRAM = `flowchart TB
+    subgraph DaemonCore["DaemonCore"]
+        start["start()"] --> initDB["initDatabase()"]
+        initDB --> cleanup["cleanupOrphanedWorktrees()"]
+        cleanup --> registerHandlers["Register IPC handlers"]
+        registerHandlers --> ipcStart["ipc.start()"]
+        ipcStart --> startEngines["Start 3 engines"]
+    end
+
+    subgraph Engines["Polling Engines"]
+        LE["LinearEngine"]
+        PRE["PREngine"]
+        EPE["ExternalPREngine"]
+    end
+
+    startEngines --> LE & PRE & EPE
+
+    LE -->|"poll()"| QM
+    PRE -->|"CHANGES_REQUESTED"| QM
+    EPE -->|"github_pr ticket"| QM
+
+    subgraph QM["Queue Manager — Serial"]
+        dequeue["findNextQueued()"]
+        process["processTicket()"]
+        dequeue --> process
+        process -->|"more queued?"| dequeue
+    end
+
+    subgraph TicketFlow["ticket-flow: processTicket()"]
+        matchRepo["repo-matcher"] --> setupWT["worktree-manager"]
+        setupWT --> autoPolicy{"automation-policy"}
+        autoPolicy -->|Yes| isReview{Review iteration?}
+        autoPolicy -->|No| skip["Skip"]
+        isReview -->|No| implement["claude.implement()"]
+        implement --> selfReview["selfReview()"]
+        selfReview --> summarize["summarizeChange()"]
+        isReview -->|Yes| addressReview["claude.addressReviews()"]
+        addressReview --> commitPush["git.commitAndPush()"]
+        summarize --> commitPush
+        commitPush --> createPR["createPR / resolveComments"]
+        createPR --> report["analytics + notification"]
+    end
+
+    process --> TicketFlow
+
+    subgraph Executors["Executors"]
+        claude["claude"]
+        codex["codex"]
+    end
+
+    implement --> claude
+    selfReview --> claude & codex
+
+    subgraph IPC["IPC Server (Unix Socket)"]
+        commands["Commands: start, stop, pause, resume, trigger-fix, retry-ticket"]
+        events["Events: status-changed, ticket-updated, claude-output, shutdown"]
+    end
+
+    TUI["TUI Client"] <-->|"JSON Lines"| IPC`;
+
+const TUI_DIAGRAM = `flowchart TB
+    subgraph App["TUIApp"]
+        AppFrame["AppFrame"]
+        TabBar["Tabs (1-6)"]
+        Content["Active View"]
+        StatusBar["StatusBar"]
+    end
+
+    subgraph Views["Tab Views"]
+        Dashboard & Manual & Tickets & Logs & Repos & Settings
+    end
+
+    Content --> Views
+
+    subgraph Stores["Zustand Stores"]
+        DaemonStore["daemon-store"]
+        AgentStore["agent-output-store"]
+        ToastStore["toast-store"]
+    end
+
+    subgraph Hooks["Hooks"]
+        useIPC["useIPCEvent()"]
+        useDB["useDB()"]
+    end
+
+    subgraph IPCClient["IPC Client"]
+        Connect["connect via daemon.sock"]
+        SendCmd["sendCommand via Promise"]
+        Reconnect["Auto-reconnect 2s"]
+    end
+
+    subgraph Daemon["Daemon Process"]
+        IPCSrv["IPC Server"]
+    end
+
+    StatusBar -->|"useInput()"| DaemonStore
+    DaemonStore -->|"sendCommand()"| SendCmd
+    SendCmd <-->|"JSON Lines"| IPCSrv
+    IPCSrv -->|"broadcast"| useIPC
+    useIPC --> DaemonStore & AgentStore
+    Views -->|"useDB()"| useDB
+    useDB -->|"query"| DB[(SQLite)]`;
 
 const SIDEBAR_SECTIONS = [
   {
@@ -27,6 +131,13 @@ const SIDEBAR_SECTIONS = [
       { id: "installation", label: "Installation" },
       { id: "setup", label: "Setup Wizard" },
       { id: "requirements", label: "Requirements" },
+    ],
+  },
+  {
+    title: "Workflow",
+    links: [
+      { id: "workflow", label: "General Workflow" },
+      { id: "review-agents", label: "Review Agents" },
     ],
   },
   {
@@ -48,6 +159,8 @@ const SIDEBAR_SECTIONS = [
     title: "Architecture",
     links: [
       { id: "pipeline", label: "Pipeline" },
+      { id: "daemon-arch", label: "Daemon Architecture" },
+      { id: "tui-arch", label: "TUI Architecture" },
       { id: "ipc", label: "IPC Protocol" },
     ],
   },
@@ -241,6 +354,13 @@ export function FerrixDocs() {
           </p>
           <ol className="space-y-2.5 mb-6 text-sm text-muted-foreground list-decimal list-inside">
             <li>
+              <strong className="text-foreground">Preflight Checks</strong> —
+              verifies <InlineCode>claude</InlineCode>,{" "}
+              <InlineCode>git</InlineCode>, <InlineCode>gh</InlineCode> CLIs are
+              installed and authenticated. Optionally detects{" "}
+              <InlineCode>codex</InlineCode> for review.
+            </li>
+            <li>
               <strong className="text-foreground">Linear API Key</strong> — from{" "}
               <a
                 href="https://linear.app/settings/api"
@@ -252,25 +372,12 @@ export function FerrixDocs() {
               , validated live
             </li>
             <li>
-              <strong className="text-foreground">Repository Discovery</strong>{" "}
+              <strong className="text-foreground">
+                Repository Scan & Selection
+              </strong>{" "}
               — auto-scans <InlineCode>~</InlineCode> and{" "}
-              <InlineCode>~/Projects</InlineCode> for git repos
-            </li>
-            <li>
-              <strong className="text-foreground">Repository Selection</strong>{" "}
-              — toggle which repos to monitor
-            </li>
-            <li>
-              <strong className="text-foreground">Polling Interval</strong> —
-              30–600 seconds (default 30s)
-            </li>
-            <li>
-              <strong className="text-foreground">Ticket Age Filters</strong> —
-              min age, max age, min description length
-            </li>
-            <li>
-              <strong className="text-foreground">GitHub Auth</strong> — checks{" "}
-              <InlineCode>gh</InlineCode> CLI status
+              <InlineCode>~/Projects</InlineCode> for git repos, toggle which to
+              monitor
             </li>
           </ol>
 
@@ -287,27 +394,30 @@ export function FerrixDocs() {
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>macOS (Apple Silicon or Intel)</li>
                   <li>Homebrew</li>
+                  <li>
+                    <InlineCode>git</InlineCode>
+                  </li>
                 </ul>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Accounts
+                  Required
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>
                     <a
-                      href="https://console.anthropic.com/"
+                      href="https://docs.anthropic.com/en/docs/claude-code"
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Claude
+                      Claude Code CLI
                     </a>{" "}
                     <span className="text-muted-foreground no-underline">
-                      (via <InlineCode>claude</InlineCode> CLI)
+                      (<InlineCode>claude</InlineCode>)
                     </span>
                   </li>
                   <li>
@@ -335,6 +445,136 @@ export function FerrixDocs() {
               </CardContent>
             </Card>
           </div>
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                Optional
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>
+                  <a
+                    href="https://openai.com/index/introducing-codex/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    OpenAI Codex CLI
+                  </a>{" "}
+                  <span className="text-muted-foreground">
+                    (<InlineCode>codex</InlineCode>) — used as an alternative
+                    review agent for independent second-opinion code reviews
+                  </span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* General Workflow */}
+          <SectionHeading id="workflow">General Workflow</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            A typical end-to-end flow from ticket to merged PR:
+          </p>
+          <ol className="space-y-3 mb-6 text-sm text-muted-foreground list-decimal list-inside">
+            <li>
+              <strong className="text-foreground">
+                Assign a ticket in Linear
+              </strong>{" "}
+              — set the state to <InlineCode>Triage</InlineCode>,{" "}
+              <InlineCode>Todo</InlineCode>, or{" "}
+              <InlineCode>Todo (ready)</InlineCode>. Add a label matching your
+              repo name (e.g. <InlineCode>my-app</InlineCode>).
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Ferrix polls and picks it up
+              </strong>{" "}
+              — the Linear engine fetches your assigned tickets at the
+              configured interval and queues matching ones.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Worktree created, Claude implements
+              </strong>{" "}
+              — a fresh git worktree is created on a new branch. Claude Code
+              reads the ticket description and generates the fix.
+            </li>
+            <li>
+              <strong className="text-foreground">Self-review</strong> — either
+              Claude or Codex reviews the changes for correctness, then Claude
+              summarizes the diff for the PR body.
+            </li>
+            <li>
+              <strong className="text-foreground">PR created on GitHub</strong>{" "}
+              — changes are committed, pushed, and a PR is opened linked back to
+              the Linear ticket.
+            </li>
+            <li>
+              <strong className="text-foreground">Review feedback loop</strong>{" "}
+              — if the PR receives <InlineCode>CHANGES_REQUESTED</InlineCode>,
+              Ferrix automatically picks it up again, addresses the review
+              comments, and pushes a new commit. This repeats up to a
+              configurable max iterations.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Notification & cleanup
+              </strong>{" "}
+              — you get a macOS notification. Once merged, the worktree is
+              cleaned up.
+            </li>
+          </ol>
+          <CodeBlock>{`# Example: label-based routing\n# Add these labels to your Linear ticket:\nmy-app              → routes to "my-app" repo, default branch\nmy-app:staging      → routes to "my-app" repo, PR targets "staging"\nmy-app:develop      → routes to "my-app" repo, PR targets "develop"`}</CodeBlock>
+
+          {/* Review Agents */}
+          <SectionHeading id="review-agents">Review Agents</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            After Claude implements a fix, a self-review step catches issues
+            before the PR is created. You can choose between two review agents:
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3 mb-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Claude{" "}
+                  <Badge variant="secondary" className="ml-1 text-[10px]">
+                    default
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Same Claude session reviews its own work. Fast, uses the
+                  existing context from the implementation step. Resumes the
+                  session so it has full awareness of what it just did.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Codex{" "}
+                  <Badge variant="outline" className="ml-1 text-[10px]">
+                    optional
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  OpenAI Codex provides an independent second opinion — a
+                  different model reviewing the diff with fresh eyes. If Codex
+                  fails or is unavailable, automatically falls back to Claude.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure via <InlineCode>review_agent</InlineCode> in Settings. The
+            reasoning: using a different model for review reduces blind spots
+            from the implementing model's biases, similar to how human code
+            review works — a fresh pair of eyes catches things the author
+            misses.
+          </p>
 
           {/* CLI Commands */}
           <SectionHeading id="cli-commands">Commands</SectionHeading>
@@ -586,6 +826,22 @@ export function FerrixDocs() {
             <InlineCode>staging</InlineCode> instead of the repo default).
           </p>
           <CodeBlock>{`# Label examples\nathena-web          → matches repo "athena-web", uses default base branch\nathena-web:staging  → matches repo "athena-web", PR targets "staging"\nathena-web:develop  → matches repo "athena-web", PR targets "develop"`}</CodeBlock>
+
+          {/* Daemon Architecture */}
+          <SectionHeading id="daemon-arch">Daemon Architecture</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            The daemon process manages polling engines, a serial queue, and the
+            ticket processing pipeline:
+          </p>
+          <Mermaid chart={DAEMON_DIAGRAM} />
+
+          {/* TUI Architecture */}
+          <SectionHeading id="tui-arch">TUI Architecture</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            The terminal UI connects to the daemon via IPC and uses Zustand
+            stores for state management:
+          </p>
+          <Mermaid chart={TUI_DIAGRAM} />
 
           {/* IPC */}
           <SectionHeading id="ipc">IPC Protocol</SectionHeading>
