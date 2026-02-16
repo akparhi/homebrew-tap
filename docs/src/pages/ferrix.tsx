@@ -82,11 +82,16 @@ const DAEMON_DIAGRAM = `flowchart TB
     TUI["TUI Client"] <-->|"JSON Lines"| IPC`;
 
 const TUI_DIAGRAM = `flowchart TB
+    Splash["SplashScreen"] -->|"init complete"| SetupCheck{"First run?"}
+    SetupCheck -->|Yes| Wizard["Setup Wizard"]
+    SetupCheck -->|No| App
+    Wizard -->|"complete"| App
+
     subgraph App["TUIApp"]
         AppFrame["AppFrame"]
         TabBar["Tabs (1-6)"]
         Content["Active View"]
-        StatusBar["StatusBar"]
+        StatusBar["StatusBar (dynamic color)"]
     end
 
     subgraph Views["Tab Views"]
@@ -129,6 +134,7 @@ const SIDEBAR_SECTIONS = [
     title: "Getting Started",
     links: [
       { id: "installation", label: "Installation" },
+      { id: "whats-new", label: "What's New" },
       { id: "setup", label: "Setup Wizard" },
       { id: "requirements", label: "Requirements" },
     ],
@@ -346,6 +352,35 @@ export function FerrixDocs() {
             Ferrix includes auto-update — the TUI prompts you when a new version
             is available.
           </p>
+
+          {/* What's New */}
+          <SectionHeading id="whats-new">
+            What&apos;s New in v0.2.0
+          </SectionHeading>
+          <ul className="space-y-2 mb-6 text-sm text-muted-foreground list-disc list-inside">
+            <li>
+              <strong className="text-foreground">
+                Animated splash screen
+              </strong>{" "}
+              — startup shows an animated splash with progress indicators while
+              the app initializes
+            </li>
+            <li>
+              <strong className="text-foreground">Startup music</strong> —
+              optional chiptune audio playback during splash screen for a retro
+              feel
+            </li>
+            <li>
+              <strong className="text-foreground">Dynamic theme colors</strong>{" "}
+              — status bar and app borders update dynamically based on daemon
+              state
+            </li>
+            <li>
+              <strong className="text-foreground">Improved setup wizard</strong>{" "}
+              — enhanced repo list scrolling and better visual feedback during
+              onboarding
+            </li>
+          </ul>
 
           {/* Setup */}
           <SectionHeading id="setup">Setup Wizard</SectionHeading>
