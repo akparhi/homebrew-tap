@@ -7,10 +7,10 @@ class Ferrix < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/akparhi/homebrew-tap/releases/download/v0.2.0/ferrix-darwin-arm64.tar.gz"
-      sha256 "307960f993686a319c7ef194f8410a229d21299f2cfa44eabc2e6e11ed50512d"
+      sha256 "b1d6320ef3d18bbbe883b14aa5ffbff17dd89c44ea28d136d8d66a9eb02be55f"
     else
       url "https://github.com/akparhi/homebrew-tap/releases/download/v0.2.0/ferrix-darwin-x64.tar.gz"
-      sha256 "8a6968dddc628c354614f92b5735f47d00982ef391dc74a715fab8fcf499c7e0"
+      sha256 "1ad0ae67dc16236f040132871b4b88c696ab5c5bc661a6d63a9769703b8d2263"
     end
   end
 
