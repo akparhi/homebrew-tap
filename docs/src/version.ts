@@ -1,1 +1,1 @@
-export const FERRIX_VERSION = "0.3.3";
+export const FERRIX_VERSION = "0.3.4";
