@@ -358,6 +358,19 @@ export function FerrixDocs() {
             </p>
           </div>
 
+          <div className="mb-12 space-y-4">
+            <img
+              src="/homebrew-tap/screenshots/splash.png"
+              alt="Ferrix splash screen"
+              className="rounded-lg border border-border shadow-lg w-full"
+            />
+            <img
+              src="/homebrew-tap/screenshots/dashboard.png"
+              alt="Ferrix TUI dashboard"
+              className="rounded-lg border border-border shadow-lg w-full"
+            />
+          </div>
+
           {/* Installation */}
           <SectionHeading id="installation">Installation</SectionHeading>
           <CodeBlock>brew install akparhi/tap/ferrix</CodeBlock>
