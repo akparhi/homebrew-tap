@@ -27,7 +27,7 @@ const DAEMON_DIAGRAM = `flowchart TB
         initDB --> cleanup["cleanupOrphanedWorktrees()"]
         cleanup --> registerHandlers["Register IPC handlers"]
         registerHandlers --> ipcStart["ipc.start()"]
-        ipcStart --> startEngines["Start 3 engines"]
+        ipcStart --> startEngines["Start 4 engines"]
     end
 
     subgraph Engines["Polling Engines"]
@@ -37,6 +37,9 @@ const DAEMON_DIAGRAM = `flowchart TB
     end
 
     startEngines --> LE & PRE & EPE
+
+    MCE["McpEngine (HTTP)"]
+    startEngines --> MCE
 
     LE -->|"poll()"| QM
     PRE -->|"CHANGES_REQUESTED"| QM
@@ -51,12 +54,13 @@ const DAEMON_DIAGRAM = `flowchart TB
 
     subgraph TicketFlow["ticket-flow: processTicket()"]
         matchRepo["repo-matcher"] --> setupWT["worktree-manager"]
-        setupWT --> autoPolicy{"automation-policy"}
+        setupWT --> fetchAssets["fetchTicketAssets()"]
+        fetchAssets --> autoPolicy{"automation-policy"}
         autoPolicy -->|Yes| isReview{Review iteration?}
         autoPolicy -->|No| skip["Skip"]
         isReview -->|No| implement["claude.implement()"]
-        implement --> selfReview["selfReview()"]
-        selfReview --> summarize["summarizeChange()"]
+        implement --> codeReview["codeReview()"]
+        codeReview --> summarize["summarizeChange()"]
         isReview -->|Yes| addressReview["claude.addressReviews()"]
         addressReview --> commitPush["git.commitAndPush()"]
         summarize --> commitPush
@@ -72,13 +76,14 @@ const DAEMON_DIAGRAM = `flowchart TB
     end
 
     implement --> claude
-    selfReview --> claude & codex
+    codeReview --> claude & codex
 
     subgraph IPC["IPC Server (Unix Socket)"]
-        commands["Commands: start, stop, pause, resume, trigger-fix, retry-ticket"]
-        events["Events: status-changed, ticket-updated, claude-output, shutdown"]
+        commands["Commands: start, stop, pause, resume, trigger-fix, retry-ticket, archive-ticket, delete-ticket"]
+        events["Events: status-changed, ticket-updated, agent-output, poll-start/end, message, shutdown"]
     end
 
+    MCE <-->|"HTTP /mcp"| ExtClient["Claude Desktop / MCP Clients"]
     TUI["TUI Client"] <-->|"JSON Lines"| IPC`;
 
 const TUI_DIAGRAM = `flowchart TB
@@ -135,6 +140,7 @@ const SIDEBAR_SECTIONS = [
     links: [
       { id: "installation", label: "Installation" },
       { id: "whats-new", label: "What's New" },
+      { id: "changelog", label: "Changelog" },
       { id: "setup", label: "Setup Wizard" },
       { id: "requirements", label: "Requirements" },
     ],
@@ -143,7 +149,16 @@ const SIDEBAR_SECTIONS = [
     title: "Workflow",
     links: [
       { id: "workflow", label: "General Workflow" },
+      { id: "github-pr-fix", label: "GitHub PR Fix" },
       { id: "review-agents", label: "Review Agents" },
+      { id: "vision", label: "Vision" },
+    ],
+  },
+  {
+    title: "MCP Server",
+    links: [
+      { id: "mcp-overview", label: "Overview" },
+      { id: "mcp-tools", label: "Tools Reference" },
     ],
   },
   {
@@ -355,32 +370,102 @@ export function FerrixDocs() {
 
           {/* What's New */}
           <SectionHeading id="whats-new">
-            What&apos;s New in v0.2.0
+            What&apos;s New in v0.4
           </SectionHeading>
           <ul className="space-y-2 mb-6 text-sm text-muted-foreground list-disc list-inside">
             <li>
+              <strong className="text-foreground">MCP Server</strong> — built-in
+              MCP server exposes 21 tools for managing tickets, repos, settings,
+              and logs from Claude Desktop or any MCP client
+            </li>
+            <li>
+              <strong className="text-foreground">External PR autofix</strong> —
+              automatically fix review comments on your non-ferrix PRs, or
+              trigger on-demand with a <InlineCode>/ferrix</InlineCode> comment
+            </li>
+            <li>
+              <strong className="text-foreground">Ticket assets</strong> —
+              images and Linear comments are fetched and injected into the agent
+              context before implementation
+            </li>
+            <li>
+              <strong className="text-foreground">Custom tasks via MCP</strong>{" "}
+              — create tasks directly from Claude Desktop with auto-inferred
+              repo, branch targeting, and additional context
+            </li>
+            <li>
               <strong className="text-foreground">
-                Animated splash screen
+                Flexible branch targeting
               </strong>{" "}
-              — startup shows an animated splash with progress indicators while
-              the app initializes
+              — <InlineCode>toBranch</InlineCode> lets PRs target a different
+              branch than the one the worktree was created from
             </li>
             <li>
-              <strong className="text-foreground">Startup music</strong> —
-              optional chiptune audio playback during splash screen for a retro
-              feel
-            </li>
-            <li>
-              <strong className="text-foreground">Dynamic theme colors</strong>{" "}
-              — status bar and app borders update dynamically based on daemon
-              state
-            </li>
-            <li>
-              <strong className="text-foreground">Improved setup wizard</strong>{" "}
-              — enhanced repo list scrolling and better visual feedback during
-              onboarding
+              <strong className="text-foreground">
+                Archive &amp; delete tickets
+              </strong>{" "}
+              — archive queued tickets to stop processing, permanently delete
+              failed ones
             </li>
           </ul>
+
+          {/* Changelog */}
+          <SectionHeading id="changelog">Changelog</SectionHeading>
+          <div className="space-y-4 mb-6 text-sm">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="default" className="font-mono text-[10px]">
+                  v0.4.7
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Feb 19, 2026
+                </span>
+              </div>
+              <p className="text-muted-foreground">
+                Legacy DB migration support in ensureDirs, improved ticket
+                handling in SetupWizard, app_version tracking with breaking
+                reset logic
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="default" className="font-mono text-[10px]">
+                  v0.4.0
+                </Badge>
+                <span className="text-xs text-muted-foreground">Feb 2026</span>
+              </div>
+              <p className="text-muted-foreground">
+                MCP server with 21 tools, enhanced repo management via MCP,
+                additionalContext and toBranch fields on tickets
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="default" className="font-mono text-[10px]">
+                  v0.3.0
+                </Badge>
+                <span className="text-xs text-muted-foreground">Jan 2026</span>
+              </div>
+              <p className="text-muted-foreground">
+                External PR engine, <InlineCode>/ferrix</InlineCode> comment
+                trigger, auto-configure Claude Desktop MCP, ticket asset
+                downloading, real-time status events, codex code review with
+                fallback
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="default" className="font-mono text-[10px]">
+                  v0.2.0
+                </Badge>
+                <span className="text-xs text-muted-foreground">Dec 2025</span>
+              </div>
+              <p className="text-muted-foreground">
+                Animated splash screen, startup chiptune music, dynamic theme
+                colors, improved setup wizard
+              </p>
+            </div>
+          </div>
 
           {/* Setup */}
           <SectionHeading id="setup">Setup Wizard</SectionHeading>
@@ -561,6 +646,131 @@ export function FerrixDocs() {
           </ol>
           <CodeBlock>{`# Example: label-based routing\n# Add these labels to your Linear ticket:\nmy-app              → routes to "my-app" repo, default branch\nmy-app:staging      → routes to "my-app" repo, PR targets "staging"\nmy-app:develop      → routes to "my-app" repo, PR targets "develop"`}</CodeBlock>
 
+          {/* GitHub PR Fix */}
+          <SectionHeading id="github-pr-fix">GitHub PR Fix</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            Ferrix can automatically address review comments on your non-ferrix
+            PRs. Two modes:
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3 mb-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Auto Mode{" "}
+                  <Badge variant="secondary" className="ml-1 text-[10px]">
+                    autofix_other_prs
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, Ferrix scans your open PRs. If a PR has{" "}
+                  <InlineCode>CHANGES_REQUESTED</InlineCode>, it automatically
+                  queues a <InlineCode>github_pr</InlineCode> ticket to address
+                  the review comments.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Command Mode{" "}
+                  <Badge variant="outline" className="ml-1 text-[10px]">
+                    /ferrix
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Post a <InlineCode>/ferrix</InlineCode> comment on any PR with
+                  unresolved review threads. The External PR Engine picks it up
+                  and queues a fix. Useful for on-demand fixes without enabling
+                  full auto mode.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure via <InlineCode>autofix_other_prs</InlineCode> (auto mode)
+            or <InlineCode>autofix_other_prs_on_command</InlineCode> (command
+            mode) in Settings. Both are disabled by default.
+          </p>
+
+          {/* Vision */}
+          <SectionHeading id="vision">
+            Vision: AI-Native Bug Fixing
+          </SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            The goal is a fully connected loop from observability to fix. In
+            Claude Desktop, you have access to:
+          </p>
+          <ul className="space-y-2 mb-6 text-sm text-muted-foreground list-disc list-inside">
+            <li>
+              <strong className="text-foreground">Linear issues</strong> — via
+              the{" "}
+              <a
+                href="https://github.com/jerhadf/linear-mcp-server"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Linear MCP server
+              </a>
+            </li>
+            <li>
+              <strong className="text-foreground">CloudWatch logs</strong> — via
+              the{" "}
+              <a
+                href="https://github.com/aws/aws-mcp"
+                target="_blank"
+                rel="noreferrer"
+              >
+                AWS MCP server
+              </a>
+            </li>
+            <li>
+              <strong className="text-foreground">Sentry errors</strong> — via
+              the{" "}
+              <a
+                href="https://github.com/getsentry/sentry-mcp"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Sentry MCP server
+              </a>
+            </li>
+            <li>
+              <strong className="text-foreground">Ferrix</strong> — managing
+              repos, tickets, and settings
+            </li>
+          </ul>
+          <p className="text-sm text-muted-foreground mb-4">The workflow:</p>
+          <ol className="space-y-2.5 mb-6 text-sm text-muted-foreground list-decimal list-inside">
+            <li>
+              <strong className="text-foreground">Spot an issue</strong> — find
+              an error in Sentry or anomalous logs in CloudWatch
+            </li>
+            <li>
+              <strong className="text-foreground">Create a ticket</strong> —
+              create a Linear issue or a custom Ferrix task. The project and
+              repo can be auto-inferred from context
+            </li>
+            <li>
+              <strong className="text-foreground">Send to Ferrix</strong> — use{" "}
+              <InlineCode>add-task</InlineCode> or{" "}
+              <InlineCode>add-linear-ticket</InlineCode> to queue the fix, with
+              additional context from the logs/errors
+            </li>
+            <li>
+              <strong className="text-foreground">Automated fix</strong> —
+              Ferrix handles implementation, review, PR creation, and review
+              feedback loop — all autonomously
+            </li>
+          </ol>
+          <p className="text-sm text-muted-foreground mb-2">
+            You stay in control of how confident you want to be: review the plan
+            before sending, add extra context, or let it run fully autonomous.
+          </p>
+
           {/* Review Agents */}
           <SectionHeading id="review-agents">Review Agents</SectionHeading>
           <p className="text-sm text-muted-foreground mb-4">
@@ -611,6 +821,191 @@ export function FerrixDocs() {
             misses.
           </p>
 
+          {/* MCP Overview */}
+          <Separator className="my-10" />
+          <SectionHeading id="mcp-overview">MCP Server</SectionHeading>
+          <p className="text-sm text-muted-foreground mb-4">
+            Ferrix runs a built-in{" "}
+            <a
+              href="https://modelcontextprotocol.io"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Model Context Protocol
+            </a>{" "}
+            server on port <InlineCode>1729</InlineCode> (configurable). Any MCP
+            client (Claude Desktop, Cursor, etc.) can connect and manage Ferrix
+            programmatically.
+          </p>
+          <h3 className="text-sm font-medium mb-2">Setup</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Run <InlineCode>ferrix mcp</InlineCode> to get the JSON config for
+            your MCP client:
+          </p>
+          <CodeBlock>{`$ ferrix mcp\n{\n  "mcpServers": {\n    "ferrix": {\n      "command": "npx",\n      "args": ["mcp-remote@latest", "http://localhost:1729/mcp", "--allow-http"]\n    }\n  }\n}`}</CodeBlock>
+          <p className="text-sm text-muted-foreground mt-3 mb-2">
+            Paste this into your Claude Desktop config (or any MCP client). The
+            daemon auto-starts the MCP server when{" "}
+            <InlineCode>mcp_enabled</InlineCode> is true.
+          </p>
+
+          {/* MCP Tools */}
+          <SectionHeading id="mcp-tools">MCP Tools Reference</SectionHeading>
+          <div className="space-y-4 mb-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    {[
+                      [
+                        "list-tickets",
+                        "List tickets with optional status filter",
+                      ],
+                      [
+                        "get-ticket-status",
+                        "Get full details of a ticket by ID",
+                      ],
+                      [
+                        "add-task",
+                        "Create a custom task (not from Linear) and queue it",
+                      ],
+                      [
+                        "add-linear-ticket",
+                        "Fetch a Linear ticket by ID and queue it",
+                      ],
+                      [
+                        "trigger-fix",
+                        "Trigger/re-queue a ticket for processing",
+                      ],
+                      ["retry-ticket", "Retry a failed or skipped ticket"],
+                      [
+                        "archive-ticket",
+                        "Archive a queued ticket to stop processing",
+                      ],
+                      ["delete-ticket", "Permanently delete a failed ticket"],
+                    ].map(([tool, desc]) => (
+                      <TableRow key={tool}>
+                        <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                          {tool}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {desc}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Ticket Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    {[
+                      [
+                        "resume-claude",
+                        "Resume a Claude Code session (opens Terminal or returns shell command)",
+                      ],
+                      [
+                        "open-in-editor",
+                        "Open a ticket's worktree in Cursor or VSCode",
+                      ],
+                    ].map(([tool, desc]) => (
+                      <TableRow key={tool}>
+                        <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                          {tool}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {desc}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Repositories
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    {[
+                      ["list-repos", "List all configured repositories"],
+                      ["add-repo", "Add a git repository (validates path)"],
+                      ["remove-repo", "Remove a repository by ID"],
+                      [
+                        "init-repo",
+                        "Queue init task to set up CLAUDE.md/AGENTS.md",
+                      ],
+                      [
+                        "set-default-branch",
+                        "Change the base branch for a repo",
+                      ],
+                    ].map(([tool, desc]) => (
+                      <TableRow key={tool}>
+                        <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                          {tool}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {desc}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Logs, Settings &amp; Controls
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableBody>
+                    {[
+                      [
+                        "get-logs",
+                        "Read recent daemon log lines (default 500)",
+                      ],
+                      ["get-settings", "Get current configuration values"],
+                      ["set-setting", "Update a config value"],
+                      ["pause-polling", "Pause all polling engines"],
+                      ["stop-daemon", "Stop the ferrix daemon"],
+                      ["help", "List all available tools with descriptions"],
+                    ].map(([tool, desc]) => (
+                      <TableRow key={tool}>
+                        <TableCell className="font-mono text-xs font-medium whitespace-nowrap">
+                          {tool}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {desc}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Separator className="my-10" />
+
           {/* CLI Commands */}
           <SectionHeading id="cli-commands">Commands</SectionHeading>
           <Card className="mb-4 overflow-hidden">
@@ -628,6 +1023,10 @@ export function FerrixDocs() {
                   ["ferrix stop", "Stop the daemon"],
                   ["ferrix status", "Show daemon status, uptime, last poll"],
                   ["ferrix logs", "Tail daemon logs (last 20 + follow)"],
+                  [
+                    "ferrix mcp",
+                    "Print MCP server config JSON for your client",
+                  ],
                 ].map(([cmd, desc]) => (
                   <TableRow key={cmd}>
                     <TableCell className="font-mono text-xs font-medium">
@@ -762,6 +1161,37 @@ export function FerrixDocs() {
                   ["claude_model", "opus", "Claude model"],
                   ["claude_timeout_minutes", "10", "Max fix time (min)"],
                   ["claude_effort_level", "low", "Reasoning effort"],
+                  ["review_agent", "claude", "claude or codex for code review"],
+                  [
+                    "autofix_ferrix_prs",
+                    "true",
+                    "Auto-address reviews on ferrix PRs",
+                  ],
+                  [
+                    "autofix_other_prs",
+                    "false",
+                    "Auto-fix external PRs with changes requested",
+                  ],
+                  [
+                    "autofix_other_prs_on_command",
+                    "false",
+                    "Fix external PRs via /ferrix comment",
+                  ],
+                  ["max_review_iterations", "10", "Max PR review cycles"],
+                  [
+                    "always_branch_default",
+                    "false",
+                    "Always use repo default branch",
+                  ],
+                  ["codex_model", "gpt-5.3-codex", "Model for Codex executor"],
+                  ["codex_effort_level", "medium", "Codex reasoning effort"],
+                  [
+                    "pr_polling_interval",
+                    "60000",
+                    "PR engine poll interval (ms)",
+                  ],
+                  ["mcp_enabled", "true", "Enable MCP HTTP server"],
+                  ["mcp_port", "1729", "MCP server port"],
                   ["notification_sound", "default", "macOS sound"],
                 ].map(([setting, def, desc]) => (
                   <TableRow key={setting}>
@@ -792,6 +1222,7 @@ export function FerrixDocs() {
               "Polling",
               "Linear",
               "Repo Match",
+              "Assets",
               "Processor",
               "Claude",
               "Git",
@@ -817,7 +1248,15 @@ export function FerrixDocs() {
             <span className="text-red-400">failed</span>
             <span className="text-muted-foreground">|</span>
             <span className="text-muted-foreground">skipped</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-orange-400">needs_human</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">archived</span>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Ticket types: <InlineCode>linear_issue</InlineCode>,{" "}
+            <InlineCode>github_pr</InlineCode>, <InlineCode>task</InlineCode>
+          </p>
           <h3 className="text-sm font-medium mb-2">How it works</h3>
           <ol className="space-y-1.5 mb-6 text-sm text-muted-foreground list-decimal list-inside">
             <li>
@@ -903,6 +1342,10 @@ export function FerrixDocs() {
                     "retry-ticket",
                     "select-repo",
                     "clear-queue",
+                    "archive-ticket",
+                    "delete-ticket",
+                    "test-notification",
+                    "test-alert",
                   ].map((c) => (
                     <li key={c}>{c}</li>
                   ))}
@@ -922,8 +1365,11 @@ export function FerrixDocs() {
                     "ticket-updated",
                     "repo-selection-required",
                     "log-entry",
-                    "claude-output",
+                    "agent-output",
                     "config-reloaded",
+                    "poll-start",
+                    "poll-end",
+                    "message",
                     "shutdown",
                   ].map((e) => (
                     <li key={e}>{e}</li>
