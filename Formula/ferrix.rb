@@ -1,16 +1,16 @@
 class Ferrix < Formula
   desc "Automated bug-fixing system powered by Claude"
   homepage "https://github.com/akparhi/darkclouds"
-  version "0.4.7"
+  version "0.4.8"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.7/ferrix-darwin-arm64.tar.gz"
-      sha256 "b3bdc7b28498891e49ab41a841812f1eec5d43cbed0faca1325e67e7cf23748e"
+      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.8/ferrix-darwin-arm64.tar.gz"
+      sha256 "c805ed3720cd86f1f53b890bcce40560b8a8ea332154a7a666f29db6257db308"
     else
-      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.7/ferrix-darwin-x64.tar.gz"
-      sha256 "413b72befd3748c791a49cbe33c2efc20993738e4ecd0c61d68100a75d172483"
+      url "https://github.com/akparhi/homebrew-tap/releases/download/v0.4.8/ferrix-darwin-x64.tar.gz"
+      sha256 "2e99e2103e22eb34cedfaf2eb5403dd5508f6357fd563afd621e5a282042ad11"
     end
   end
 
